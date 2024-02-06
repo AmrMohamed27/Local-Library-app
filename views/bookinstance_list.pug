@@ -1,0 +1,18 @@
+extends layout
+
+block content
+    h1=title
+    if bookInstances.length
+        ul
+            each bookInstance in bookInstances
+                li
+                    a(href='/catalog/bookinstance/' + bookInstance.id)=bookInstance.book.title
+                    if bookInstance.status=="AVAILABLE"
+                        p.text-success=bookInstance.status
+                    else if bookInstance.status=="MAINTENANCE"
+                        p.text-danger=bookInstance.status
+                    else
+                        p.text-warning=bookInstance.status
+                    p.pull-right=bookInstance.dueBack.toDateString()
+    else
+        p No book instances available.

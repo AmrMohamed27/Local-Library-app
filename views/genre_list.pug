@@ -1,0 +1,11 @@
+extends layout
+
+block content
+    h1=title
+    if genres.length
+        ul
+            each genre in genres
+                li
+                    a(href="/catalog/genre/" + genre.id)= genre.name
+    else
+        p No genres found.

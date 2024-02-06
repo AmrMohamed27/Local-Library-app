@@ -1,0 +1,16 @@
+extends layout
+block content
+
+    h1=title
+    if authors.length
+        ul
+            each author in authors
+                li
+                    a(href='/catalog/author/' + author.id)=author.firstName + " " + author.familyName
+                    |  Date of Birth: #{author.dateOfBirth.toDateString()}
+                    if author.dateOfDeath !== null && author.dateOfDeath !== undefined
+                        |, died on: #{author.dateOfDeath.toDateString()} aged #{calculateAge(author.dateOfBirth, author.dateOfDeath)} years.
+                    else
+                        | , aged #{calculateAge(author.dateOfBirth)} years.
+    else
+        p No authors found.
