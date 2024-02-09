@@ -16,4 +16,7 @@ block content
                 dd=book.summary
     else
         p This author has no books.
+    hr
+    p
+        a(href="/catalog/author/" + author.id + "/delete" style="color: red;") Delete this author
 

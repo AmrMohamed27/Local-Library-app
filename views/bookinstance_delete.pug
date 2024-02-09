@@ -1,0 +1,11 @@
+extends layout 
+
+block content 
+    h1= `${title}: ${book.title} Copy Number: ${bookInstance.id}`
+    p=`By Author ${author.firstName} ${author.familyName}`
+    p=`Copy status is ${bookInstance.status}${bookInstance.dueBack ? ` and it is due back on ${formatDate(bookInstance.dueBack)}` : ''}`
+    p= `Are you sure you want to delete this copy of ${book.title}?`
+    form(method="POST")
+        .form-group 
+            input#bookInstanceId.form-control(name="bookInstanceId" type="hidden", value=bookInstance.id)
+            button.btn.btn-danger(type='submit') Delete Book Instance

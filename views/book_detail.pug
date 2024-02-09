@@ -22,6 +22,8 @@ block content
             if val.status!="AVAILABLE"
                 p #[strong Due back:] #{val.dueBack}
             p #[strong Id: ]
-                a(href="catalog/bookinstance/" + val.id) #{val.id}
+                a(href="/catalog/bookinstance/" + val.id) #{val.id}
         else
             p There are no copies of this book in the library.
+    hr
+    a(href=`/catalog/book/${book.id}/delete`, style="color: red;") Delete This Book

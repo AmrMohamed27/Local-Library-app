@@ -1,7 +1,8 @@
 const asyncHandler = require("express-async-handler");
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
-const { formatDate, calculateAge } = require("./functions");
+const { formatDate, calculateAge, htmlDate } = require("./functions");
+const { body, validationResult } = require("express-validator");
 
 // Display list of all Authors.
 
@@ -70,23 +71,154 @@ exports.author_detail = asyncHandler(async (req, res, next) => {
 });
 
 // Display Author create form on GET.
-exports.author_create_get = asyncHandler(async (req, res, next) => {
-  res.send("NOT IMPLEMENTED: Author create GET");
-});
+exports.author_create_get = (req, res, next) => {
+  res.render("author_form", { title: "Create Author" });
+};
 
 // Handle Author create on POST.
-exports.author_create_post = asyncHandler(async (req, res, next) => {
-  res.send("NOT IMPLEMENTED: Author create POST");
-});
+exports.author_create_post = [
+  body("firstName")
+    .trim()
+    .isLength({ min: 1 })
+    .escape()
+    .withMessage("Please enter a valid first name")
+    .isAlpha()
+    .withMessage("Please enter a first name that only containers letters"),
+  body("familyName")
+    .trim()
+    .isLength({ min: 1 })
+    .escape()
+    .withMessage("Please enter a valid family name")
+    .isAlpha()
+    .withMessage("Please enter a family name that only containers letters"),
+  body("dateOfBirth")
+    .trim()
+    .optional({ values: "falsy" })
+    .isISO8601()
+    .toDate()
+    .withMessage("Please enter a valid date of birth"),
+  body("dateOfDeath")
+    .trim()
+    .optional({ values: "falsy" })
+    .isISO8601()
+    .toDate()
+    .withMessage("Please enter a valid date of death"),
+  asyncHandler(async (req, res, next) => {
+    const errors = validationResult(req);
+    const authorData = {
+      firstName: req.body.firstName,
+      familyName: req.body.familyName,
+      dateOfBirth: htmlDate(req.body.dateOfBirth),
+      dateOfDeath: htmlDate(req.body.dateOfDeath),
+    };
+    if (!errors.isEmpty()) {
+      res.render("author_form", {
+        title: "Create Author",
+        author: authorData,
+        errors: errors.array(),
+      });
+    } else {
+      const authorExists = await prisma.author.findFirst({
+        where: {
+          AND: [
+            {
+              firstName: {
+                equals: authorData.firstName,
+                mode: "insensitive",
+              },
+            },
+            {
+              familyName: {
+                equals: authorData.familyName,
+                mode: "insensitive",
+              },
+            },
+          ],
+        },
+      });
+      if (authorExists) {
+        res.redirect(`/catalog/author/${authorExists.id}`);
+      } else {
+        const createdAuthor = await prisma.author.create({
+          data: {
+            firstName: authorData.firstName,
+            familyName: authorData.familyName,
+            dateOfBirth: req.body.dateOfBirth,
+            dateOfDeath: req.body.dateOfDeath ? req.body.dateOfDeath : null,
+          },
+        });
+        res.redirect(`/catalog/author/${createdAuthor.id}`);
+      }
+    }
+  }),
+];
 
 // Display Author delete form on GET.
 exports.author_delete_get = asyncHandler(async (req, res, next) => {
-  res.send("NOT IMPLEMENTED: Author delete GET");
+  const author = await prisma.author.findUnique({
+    where: {
+      id: parseInt(req.params.id),
+    },
+  });
+  if (!author) {
+    res.redirect("/catalog/authors");
+  }
+  const booksByAuthor = await prisma.book.findMany({
+    select: {
+      title: true,
+      summary: true,
+      id: true,
+    },
+    where: {
+      authorId: author.id,
+    },
+  });
+  res.render("author_delete", {
+    title: "Delete Author",
+    author: author,
+    books: booksByAuthor,
+    formatDate: formatDate,
+    calculateAge: calculateAge,
+  });
 });
 
 // Handle Author delete on POST.
 exports.author_delete_post = asyncHandler(async (req, res, next) => {
-  res.send("NOT IMPLEMENTED: Author delete POST");
+  const author = await prisma.author.findUnique({
+    where: {
+      id: parseInt(req.body.authorId),
+    },
+  });
+  if (!author) {
+    res.redirect("/catalog/authors");
+  }
+  const booksByAuthor = await prisma.book.findMany({
+    select: {
+      title: true,
+      summary: true,
+      id: true,
+    },
+    where: {
+      authorId: author.id,
+    },
+  });
+  if (booksByAuthor.length > 0) {
+    res.render("author_delete", {
+      title: "Delete Author",
+      author: author,
+      books: booksByAuthor,
+      formatDate: formatDate,
+      calculateAge: calculateAge,
+    });
+    return;
+  } else {
+    await prisma.author.delete({
+      where: {
+        id: author.id,
+      },
+    });
+    res.redirect("/catalog/authors");
+  }
 });
 
 // Display Author update form on GET.

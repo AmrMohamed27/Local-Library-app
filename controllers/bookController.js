@@ -2,6 +2,8 @@ const asyncHandler = require("express-async-handler");
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const { DateTime } = require("luxon");
+const { body, validationResult } = require("express-validator");
+const { formatDate } = require("./functions.js");
 
 exports.index = asyncHandler(async (req, res, next) => {
   const bookCount = await prisma.book.count();
@@ -130,22 +132,162 @@ exports.book_detail = asyncHandler(async (req, res, next) => {
 
 // Display book create form on GET.
 exports.book_create_get = asyncHandler(async (req, res, next) => {
-  res.send("NOT IMPLEMENTED: Book create GET");
+  const [allAuthors, allGenres] = await Promise.all([
+    prisma.author.findMany(),
+    prisma.genre.findMany(),
+  ]);
+  res.render("book_form", {
+    title: "Create Book",
+    authors: allAuthors,
+    genres: allGenres,
+  });
 });
 
 // Handle book create on POST.
-exports.book_create_post = asyncHandler(async (req, res, next) => {
-  res.send("NOT IMPLEMENTED: Book create POST");
-});
+exports.book_create_post = [
+  body("title")
+    .trim()
+    .isLength({ min: 1 })
+    .escape()
+    .withMessage("Book title must not be empty"),
+  body("genre").escape(),
+  body("summary")
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage("Book summary must not be empty"),
+  body("isbn")
+    .trim()
+    .isLength({ min: 13, max: 13 })
+    .isNumeric()
+    .withMessage("Book ISBN must contain 13 digits"),
+  asyncHandler(async (req, res, next) => {
+    const errors = validationResult(req);
+    const bookData = {
+      title: req.body.title,
+      author: req.body.author,
+      genre: req.body.genre,
+      summary: req.body.summary,
+      isbn: req.body.isbn,
+    };
+    if (!errors.isEmpty()) {
+      const [allAuthors, allGenres] = await Promise.all([
+        prisma.author.findMany(),
+        prisma.genre.findMany(),
+      ]);
+      res.render("book_form", {
+        title: "Create Book",
+        book: bookData,
+        authors: allAuthors,
+        genres: allGenres,
+      });
+    } else {
+      const bookExists = await prisma.book.findFirst({
+        where: {
+          isbn: bookData.isbn,
+        },
+      });
+      if (bookExists) {
+        res.redirect(`/catalog/book/${bookExists.id}`);
+      } else {
+        const createdBook = await prisma.book.create({
+          data: {
+            title: bookData.title,
+            author: {
+              connect: {
+                id: parseInt(bookData.author),
+              },
+            },
+            summary: bookData.summary,
+            isbn: bookData.isbn,
+            genre: {
+              connect: {
+                id: parseInt(bookData.genre),
+              },
+            },
+          },
+        });
+        res.redirect(`/catalog/book/${createdBook.id}`);
+      }
+    }
+  }),
+];
 
 // Display book delete form on GET.
 exports.book_delete_get = asyncHandler(async (req, res, next) => {
-  res.send("NOT IMPLEMENTED: Book delete GET");
+  const book = await prisma.book.findUnique({
+    where: {
+      id: parseInt(req.params.id),
+    },
+  });
+  if (!book) {
+    res.redirect("/catalog/books");
+  }
+  const author = await prisma.author.findUnique({
+    where: {
+      id: book.authorId,
+    },
+  });
+  const genre = await prisma.genre.findUnique({
+    where: {
+      id: book.genreId,
+    },
+  });
+  const bookInstances = await prisma.bookInstance.findMany({
+    where: {
+      bookId: book.id,
+    },
+  });
+  res.render("book_delete", {
+    title: "Delete Book",
+    book: book,
+    genre: genre,
+    author: author,
+    bookInstances: bookInstances,
+    formatDate: formatDate,
+  });
 });
 
 // Handle book delete on POST.
 exports.book_delete_post = asyncHandler(async (req, res, next) => {
-  res.send("NOT IMPLEMENTED: Book delete POST");
+  const book = await prisma.book.findUnique({
+    where: {
+      id: parseInt(req.body.bookId),
+    },
+  });
+  const author = await prisma.author.findUnique({
+    where: {
+      id: book.authorId,
+    },
+  });
+  const genre = await prisma.genre.findUnique({
+    where: {
+      id: book.genreId,
+    },
+  });
+  const bookInstances = await prisma.bookInstance.findMany({
+    where: {
+      bookId: book.id,
+    },
+  });
+  if (!book || !author || !genre) {
+    res.redirect("/catalog/books");
+  }
+  if (bookInstances.length > 0) {
+    res.render("book_delete", {
+      title: "Delete Book",
+      book: book,
+      genre: genre,
+      author: author,
+      bookInstances: bookInstances,
+      formatDate: formatDate,
+    });
+  }
+  await prisma.book.delete({
+    where: {
+      id: book.id,
+    },
+  });
+  res.redirect("/catalog/books");
 });
 
 // Display book update form on GET.

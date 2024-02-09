@@ -1,0 +1,38 @@
+extends layout
+
+block content
+    h1=title
+    form(method="POST")
+        .form-group
+            label(for="book") Book:
+            select#book.form-control(name="book" required)
+                option(value="") --Please select a book--
+                each bookie in bookList
+                    if data 
+                        if bookie.id===data.book
+                            option(value=bookie.id selected)=bookie.title
+                        else
+                            option(value=bookie.id)=bookie.title
+                    else 
+                        option(value=bookie.id)=bookie.title
+        .form-group
+            label(for="dueBack") Due Back:
+            input#dueBack.form-control(type="date" name="dueBack", value=data===undefined ? "" : data.dueBack, required)
+        .form-group
+            label(for="status") Status:
+            select#status.form-control(name="status" required)
+                option(value="") --Please select a status--
+                each stat in statusList 
+                    if data 
+                        if stat===data.status
+                            option(value=stat selected)=stat
+                        else 
+                            option(value=stat)=stat
+                    else 
+                        option(value=stat)=stat
+        button.btn.btn-primary(type="submit") Submit
+        button.btn.btn-secondary(type="reset") Reset 
+    if errors 
+        ul 
+            each error in errors
+                li!=error

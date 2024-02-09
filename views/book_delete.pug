@@ -1,0 +1,20 @@
+extends layout 
+
+block content 
+    h1=`${title}: ${book.title}`
+    p=`A ${genre.name} book By author ${author.firstName} ${author.familyName}`
+    if bookInstances.length 
+        p #[strong Please remove all book instances first before removing the book.]
+        div(style='margin-left:20px;margin-top:20px')
+            h4 Book Instances
+            dl
+                each copy in bookInstances
+                    dt
+                        a(href=`/catalog/bookinstance/${copy.id}`) #{copy.id}
+                    dd=`${copy.status}${copy.dueBack ? `, Due Back on: ${ formatDate(copy.dueBack)}` : ""}`
+    else 
+        p=`Are you sure you want to delete this book: ${book.title}?`
+        form(method="POST")
+            .form-group 
+                input#bookId.form-control(name="bookId" type="hidden", value=book.id)
+                button.btn.btn-danger(type='submit') Delete Book

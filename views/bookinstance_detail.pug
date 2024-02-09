@@ -6,7 +6,7 @@ block content
     p #[strong Title: ]
         a(href="/catalog/book/" + book.id)=book.title
     p #[strong Author: ]
-        a(href="catalog/author/" + author.id)=`${author.firstName} ${author.familyName}`
+        a(href="/catalog/author/" + author.id)=`${author.firstName} ${author.familyName}`
     p #[strong Status: ]
         if bookInstance.status=="AVAILABLE"
             span.text-success=bookInstance.status
@@ -16,3 +16,5 @@ block content
             span.text-warning=bookInstance.status
     if bookInstance.status!="AVAILABLE"
         p #[strong Due Back: ] #{formatDate(bookInstance.dueBack)}
+    hr
+    p #[a(href="/catalog/bookinstance/" + bookInstance.id + "/delete" style="color: red;") Delete this book instance]

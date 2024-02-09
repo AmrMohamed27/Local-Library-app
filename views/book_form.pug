@@ -1,0 +1,45 @@
+extends layout
+
+block content
+    h1=title
+
+    form(method="POST")
+        .form-group
+            label(for="title") Title:
+            input#title.form-control(type="text" name="title" placeholder="Book Title" required value=(book === undefined ? "" : book.title))
+        .form-group
+            label(for="author") Author:
+            select#author.form-control(name="author" required)
+                option(value="") --Please Select an Author--
+                each author in authors
+                    if book
+                        if author.id===book.author
+                            option(value=author.id selected )=`${author.firstName} ${author.familyName}`
+                        else 
+                            option(value=author.id)=`${author.firstName} ${author.familyName}`
+                    else
+                        option(value=author.id)=`${author.firstName} ${author.familyName}`
+        .form-group
+            label(for="summary") Summary:
+            textarea#summary.form-control(placeholder="Book Summary" name="summary" required)=book===undefined ? "" : book.summary
+        .form-group
+            label(for="isbn") ISBN:
+            input#isbn.form-control(type="text" name="isbn" placeholder="ISBN13" required value=(book===undefined ? "" : book.isbn))
+        .form-group
+            label(for="genre") Genre:
+            select#genre.form-control(name="genre" required)
+                option(value="") --Please Select a Genre--
+                each genre in genres
+                    if book
+                        if genre.id===book.genre
+                            option(value=genre.id selected )=genre.name
+                        else
+                            option(value=genre.id)=genre.name
+                    else
+                        option(value=genre.id)=genre.name
+        button.btn.btn-primary(type='submit') Submit
+        button.btn.btn-secondary(type="reset") Reset
+    if errors
+        ul
+            each error in errors
+                li!= error.msg

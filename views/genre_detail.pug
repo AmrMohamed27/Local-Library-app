@@ -1,7 +1,7 @@
 extends layout
 
 block content
-    h1= `Genre: ${genre.name}`
+    h1=`Genre: ${genre.name}`
     div(style='margin-left:20px;margin-top:20px')
         h4 Books
         if books.length
@@ -12,3 +12,5 @@ block content
                     dd #{book.summary}
         else
             p This genre has no books
+    hr
+    a(href="/catalog/genre/" + genre.id + "/delete") Delete this genre
