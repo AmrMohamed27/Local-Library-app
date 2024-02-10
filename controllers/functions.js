@@ -21,26 +21,27 @@ const calculateAge = function (dateOfBirth, dateOfDeath = new Date()) {
   return Math.floor(years);
 };
 
-const allBooks = async function () {
-  return await prisma.book.findMany({
+const allAuthors = async function () {
+  return await prisma.author.findMany({
     orderBy: {
-      title: "asc",
+      firstName: "asc",
     },
   });
 };
-const statusList = async function () {
-  let statuses = [];
-  for (const key in BookStatus) {
-    statuses.push(BookStatus[key]);
-  }
-  return statuses;
+
+const allGenres = async function () {
+  return await prisma.genre.findMany({
+    orderBy: {
+      name: "asc",
+    },
+  });
 };
 
 module.exports = {
   formatDate,
   calculateAge,
   htmlDate,
-  allBooks,
-  statusList,
   toISO8601,
+  allAuthors,
+  allGenres,
 };

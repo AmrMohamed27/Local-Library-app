@@ -3,29 +3,11 @@ const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const { formatDate, calculateAge, htmlDate } = require("./functions");
 const { body, validationResult } = require("express-validator");
+const authorModel = require("../models/authorModel.js");
 
 // Display list of all Authors.
-
-// Function to get all authors
-async function getAuthors() {
-  try {
-    const authors = await prisma.author.findMany({
-      orderBy: {
-        firstName: "asc",
-      },
-    });
-    return authors;
-  } catch (error) {
-    console.error("Error getting authors:", error);
-  } finally {
-    await prisma.$disconnect();
-  }
-}
-
-// Function to calculate age of author
-
 exports.author_list = asyncHandler(async (req, res, next) => {
-  const authors = await getAuthors();
+  const authors = await authorModel.getAllAuthors();
   res.render("author_list", {
     title: "Author List",
     authors: authors,
@@ -36,26 +18,13 @@ exports.author_list = asyncHandler(async (req, res, next) => {
 // Display detail page for a specific Author.
 exports.author_detail = asyncHandler(async (req, res, next) => {
   try {
-    const author = await prisma.author.findUnique({
-      where: {
-        id: parseInt(req.params.id),
-      },
-    });
+    const author = await authorModel.getAuthor(parseInt(req.params.id));
     if (author === null) {
       const err = new Error("Author not found");
       err.status = 404;
       return next(err);
     }
-    const booksByAuthor = await prisma.book.findMany({
-      select: {
-        title: true,
-        summary: true,
-        id: true,
-      },
-      where: {
-        authorId: author.id,
-      },
-    });
+    const booksByAuthor = await authorModel.booksByAuthor(author.id);
     res.render("author_detail", {
       title: "Author Detail",
       author: author,
@@ -118,24 +87,10 @@ exports.author_create_post = [
         errors: errors.array(),
       });
     } else {
-      const authorExists = await prisma.author.findFirst({
-        where: {
-          AND: [
-            {
-              firstName: {
-                equals: authorData.firstName,
-                mode: "insensitive",
-              },
-            },
-            {
-              familyName: {
-                equals: authorData.familyName,
-                mode: "insensitive",
-              },
-            },
-          ],
-        },
-      });
+      const authorExists = authorModel.authorExists(
+        authorData.firstName,
+        authorData.familyName
+      );
       if (authorExists) {
         res.redirect(`/catalog/author/${authorExists.id}`);
       } else {
@@ -155,24 +110,11 @@ exports.author_create_post = [
 
 // Display Author delete form on GET.
 exports.author_delete_get = asyncHandler(async (req, res, next) => {
-  const author = await prisma.author.findUnique({
-    where: {
-      id: parseInt(req.params.id),
-    },
-  });
+  const author = await authorModel.getAuthor(parseInt(req.params.id));
   if (!author) {
     res.redirect("/catalog/authors");
   }
-  const booksByAuthor = await prisma.book.findMany({
-    select: {
-      title: true,
-      summary: true,
-      id: true,
-    },
-    where: {
-      authorId: author.id,
-    },
-  });
+  const booksByAuthor = await authorModel.booksByAuthor(author.id);
   res.render("author_delete", {
     title: "Delete Author",
     author: author,
@@ -184,24 +126,11 @@ exports.author_delete_get = asyncHandler(async (req, res, next) => {
 
 // Handle Author delete on POST.
 exports.author_delete_post = asyncHandler(async (req, res, next) => {
-  const author = await prisma.author.findUnique({
-    where: {
-      id: parseInt(req.body.authorId),
-    },
-  });
+  const author = await authorModel.getAuthor(parseInt(req.body.authorId));
   if (!author) {
     res.redirect("/catalog/authors");
   }
-  const booksByAuthor = await prisma.book.findMany({
-    select: {
-      title: true,
-      summary: true,
-      id: true,
-    },
-    where: {
-      authorId: author.id,
-    },
-  });
+  const booksByAuthor = await authorModel.booksByAuthor(author.id);
   if (booksByAuthor.length > 0) {
     res.render("author_delete", {
       title: "Delete Author",
@@ -212,11 +141,7 @@ exports.author_delete_post = asyncHandler(async (req, res, next) => {
     });
     return;
   } else {
-    await prisma.author.delete({
-      where: {
-        id: author.id,
-      },
-    });
+    authorModel.deleteAuthor(author.id);
     res.redirect("/catalog/authors");
   }
 });

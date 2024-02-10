@@ -4,6 +4,10 @@ const prisma = new PrismaClient();
 const { DateTime } = require("luxon");
 const { body, validationResult } = require("express-validator");
 const { formatDate } = require("./functions.js");
+const bookModel = require("../models/bookModel.js");
+const bookInstanceModel = require("../models/bookInstancesModel.js");
+const authorModel = require("../models/authorModel.js");
+const genreModel = require("../models/genreModel.js");
 
 exports.index = asyncHandler(async (req, res, next) => {
   const bookCount = await prisma.book.count();
@@ -23,42 +27,12 @@ exports.index = asyncHandler(async (req, res, next) => {
     book_instance_count: bookInstanceCount,
     available_count: availableCount,
   });
-  await prisma.$disconnect;
 });
 
 // Display list of all books.
 
-// Function to get the books
-async function getBooks() {
-  try {
-    const books = await prisma.book.findMany({
-      include: {
-        author: {
-          select: {
-            firstName: true,
-            familyName: true,
-          },
-        },
-        genre: {
-          select: {
-            name: true,
-          },
-        },
-      },
-      orderBy: {
-        title: "asc",
-      },
-    });
-    return books;
-  } catch (error) {
-    console.error("Error getting books:", error);
-  } finally {
-    await prisma.$disconnect();
-  }
-}
-
 exports.book_list = asyncHandler(async (req, res, next) => {
-  const books = await getBooks();
+  const books = await bookModel.getAllBooks();
   res.render("book_list", {
     title: "Book List",
     books: books,
@@ -68,29 +42,15 @@ exports.book_list = asyncHandler(async (req, res, next) => {
 // Display detail page for a specific book.
 exports.book_detail = asyncHandler(async (req, res, next) => {
   try {
-    const book = await prisma.book.findUnique({
-      where: {
-        id: parseInt(req.params.id),
-      },
-    });
+    const book = await bookModel.getBook(parseInt(req.params.id));
     if (book === null) {
       const err = new Error("Book not found");
       err.status = 404;
       return next(err);
     }
-    await prisma.bookInstance.updateMany({
-      where: {
-        dueBack: null,
-      },
-      data: {
-        dueBack: new Date(),
-      },
-    });
-    const bookInstances = await prisma.bookInstance.findMany({
-      where: {
-        bookId: parseInt(req.params.id),
-      },
-    });
+    const bookInstances = await bookInstanceModel.allBookInstancesOfBook(
+      book.id
+    );
     if (bookInstances === null) {
       const err = new Error("Book Instances not found");
       err.status = 404;
@@ -102,21 +62,13 @@ exports.book_detail = asyncHandler(async (req, res, next) => {
       );
     });
 
-    const authorOfBook = await prisma.author.findUnique({
-      where: {
-        id: parseInt(book.authorId),
-      },
-    });
+    const authorOfBook = await bookModel.getBookAuthor(book.id);
     if (authorOfBook === null) {
       const err = new Error("Book Author not found");
       err.status = 404;
       return next(err);
     }
-    const genreOfBook = await prisma.genre.findUnique({
-      where: {
-        id: parseInt(book.genreId),
-      },
-    });
+    const genreOfBook = await bookModel.getBookGenre(book.id);
     res.render("book_detail", {
       book: book,
       bookInstances: bookInstances,
@@ -126,15 +78,14 @@ exports.book_detail = asyncHandler(async (req, res, next) => {
   } catch (err) {
     return next(err);
   } finally {
-    prisma.$disconnect;
   }
 });
 
 // Display book create form on GET.
 exports.book_create_get = asyncHandler(async (req, res, next) => {
   const [allAuthors, allGenres] = await Promise.all([
-    prisma.author.findMany(),
-    prisma.genre.findMany(),
+    authorModel.getAllAuthors(),
+    genreModel.getAllGenres(),
   ]);
   res.render("book_form", {
     title: "Create Book",
@@ -171,8 +122,8 @@ exports.book_create_post = [
     };
     if (!errors.isEmpty()) {
       const [allAuthors, allGenres] = await Promise.all([
-        prisma.author.findMany(),
-        prisma.genre.findMany(),
+        authorModel.getAllAuthors(),
+        genreModel.getAllGenres(),
       ]);
       res.render("book_form", {
         title: "Create Book",
@@ -181,31 +132,15 @@ exports.book_create_post = [
         genres: allGenres,
       });
     } else {
-      const bookExists = await prisma.book.findFirst({
-        where: {
-          isbn: bookData.isbn,
-        },
-      });
+      const bookExists = bookModel.bookExists(
+        bookData.isbn,
+        bookData.title,
+        bookData.summary
+      );
       if (bookExists) {
         res.redirect(`/catalog/book/${bookExists.id}`);
       } else {
-        const createdBook = await prisma.book.create({
-          data: {
-            title: bookData.title,
-            author: {
-              connect: {
-                id: parseInt(bookData.author),
-              },
-            },
-            summary: bookData.summary,
-            isbn: bookData.isbn,
-            genre: {
-              connect: {
-                id: parseInt(bookData.genre),
-              },
-            },
-          },
-        });
+        const createdBook = await bookModel.createBook(bookData);
         res.redirect(`/catalog/book/${createdBook.id}`);
       }
     }
@@ -214,29 +149,13 @@ exports.book_create_post = [
 
 // Display book delete form on GET.
 exports.book_delete_get = asyncHandler(async (req, res, next) => {
-  const book = await prisma.book.findUnique({
-    where: {
-      id: parseInt(req.params.id),
-    },
-  });
+  const book = await bookModel.getBook(req.params.id);
   if (!book) {
     res.redirect("/catalog/books");
   }
-  const author = await prisma.author.findUnique({
-    where: {
-      id: book.authorId,
-    },
-  });
-  const genre = await prisma.genre.findUnique({
-    where: {
-      id: book.genreId,
-    },
-  });
-  const bookInstances = await prisma.bookInstance.findMany({
-    where: {
-      bookId: book.id,
-    },
-  });
+  const author = await bookModel.getBookAuthor(book.id);
+  const genre = await bookModel.getBookGenre(book.id);
+  const bookInstances = await bookModel.bookCopies(book.id);
   res.render("book_delete", {
     title: "Delete Book",
     book: book,
@@ -249,26 +168,10 @@ exports.book_delete_get = asyncHandler(async (req, res, next) => {
 
 // Handle book delete on POST.
 exports.book_delete_post = asyncHandler(async (req, res, next) => {
-  const book = await prisma.book.findUnique({
-    where: {
-      id: parseInt(req.body.bookId),
-    },
-  });
-  const author = await prisma.author.findUnique({
-    where: {
-      id: book.authorId,
-    },
-  });
-  const genre = await prisma.genre.findUnique({
-    where: {
-      id: book.genreId,
-    },
-  });
-  const bookInstances = await prisma.bookInstance.findMany({
-    where: {
-      bookId: book.id,
-    },
-  });
+  const book = await bookModel.getBook(req.body.bookId);
+  const author = await bookModel.getBookAuthor(book.id);
+  const genre = await bookModel.getBookGenre(book.id);
+  const bookInstances = await bookModel.bookCopies(book.id);
   if (!book || !author || !genre) {
     res.redirect("/catalog/books");
   }
@@ -282,17 +185,14 @@ exports.book_delete_post = asyncHandler(async (req, res, next) => {
       formatDate: formatDate,
     });
   }
-  await prisma.book.delete({
-    where: {
-      id: book.id,
-    },
-  });
+  bookModel.deleteBook(book.id);
   res.redirect("/catalog/books");
 });
 
 // Display book update form on GET.
 exports.book_update_get = asyncHandler(async (req, res, next) => {
-  res.send("NOT IMPLEMENTED: Book update GET");
+  const book = await bookModel.getBook(req.params.id);
+  res.render("book_form", { title: "Update Book", book: book });
 });
 
 // Handle book update on POST.
