@@ -1,6 +1,4 @@
 const { DateTime } = require("luxon");
-const { PrismaClient, BookStatus } = require("@prisma/client");
-const prisma = new PrismaClient();
 const formatDate = function (date) {
   return DateTime.fromJSDate(date).toLocaleString(DateTime.DATE_FULL);
 };
@@ -21,27 +19,9 @@ const calculateAge = function (dateOfBirth, dateOfDeath = new Date()) {
   return Math.floor(years);
 };
 
-const allAuthors = async function () {
-  return await prisma.author.findMany({
-    orderBy: {
-      firstName: "asc",
-    },
-  });
-};
-
-const allGenres = async function () {
-  return await prisma.genre.findMany({
-    orderBy: {
-      name: "asc",
-    },
-  });
-};
-
 module.exports = {
   formatDate,
   calculateAge,
   htmlDate,
   toISO8601,
-  allAuthors,
-  allGenres,
 };

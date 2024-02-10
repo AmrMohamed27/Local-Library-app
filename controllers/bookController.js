@@ -48,9 +48,7 @@ exports.book_detail = asyncHandler(async (req, res, next) => {
       err.status = 404;
       return next(err);
     }
-    const bookInstances = await bookInstanceModel.allBookInstancesOfBook(
-      book.id
-    );
+    const bookInstances = await bookModel.bookCopies(book.id);
     if (bookInstances === null) {
       const err = new Error("Book Instances not found");
       err.status = 404;
@@ -62,13 +60,13 @@ exports.book_detail = asyncHandler(async (req, res, next) => {
       );
     });
 
-    const authorOfBook = await bookModel.getBookAuthor(book.id);
+    const authorOfBook = await authorModel.getAuthor(book.authorId);
     if (authorOfBook === null) {
       const err = new Error("Book Author not found");
       err.status = 404;
       return next(err);
     }
-    const genreOfBook = await bookModel.getBookGenre(book.id);
+    const genreOfBook = await genreModel.getGenre(book.genreId);
     res.render("book_detail", {
       book: book,
       bookInstances: bookInstances,
@@ -132,7 +130,7 @@ exports.book_create_post = [
         genres: allGenres,
       });
     } else {
-      const bookExists = bookModel.bookExists(
+      const bookExists = await bookModel.bookExists(
         bookData.isbn,
         bookData.title,
         bookData.summary
@@ -149,12 +147,12 @@ exports.book_create_post = [
 
 // Display book delete form on GET.
 exports.book_delete_get = asyncHandler(async (req, res, next) => {
-  const book = await bookModel.getBook(req.params.id);
+  const book = await bookModel.getBook(parseInt(req.params.id));
   if (!book) {
     res.redirect("/catalog/books");
   }
-  const author = await bookModel.getBookAuthor(book.id);
-  const genre = await bookModel.getBookGenre(book.id);
+  const author = await authorModel.getAuthor(book.authorId);
+  const genre = await genreModel.getGenre(book.genreId);
   const bookInstances = await bookModel.bookCopies(book.id);
   res.render("book_delete", {
     title: "Delete Book",
@@ -168,9 +166,9 @@ exports.book_delete_get = asyncHandler(async (req, res, next) => {
 
 // Handle book delete on POST.
 exports.book_delete_post = asyncHandler(async (req, res, next) => {
-  const book = await bookModel.getBook(req.body.bookId);
-  const author = await bookModel.getBookAuthor(book.id);
-  const genre = await bookModel.getBookGenre(book.id);
+  const book = await bookModel.getBook(parseInt(req.body.bookId));
+  const author = await authorModel.getAuthor(book.authorId);
+  const genre = await genreModel.getGenre(book.genreId);
   const bookInstances = await bookModel.bookCopies(book.id);
   if (!book || !author || !genre) {
     res.redirect("/catalog/books");
@@ -185,13 +183,13 @@ exports.book_delete_post = asyncHandler(async (req, res, next) => {
       formatDate: formatDate,
     });
   }
-  bookModel.deleteBook(book.id);
+  await bookModel.deleteBook(book.id);
   res.redirect("/catalog/books");
 });
 
 // Display book update form on GET.
 exports.book_update_get = asyncHandler(async (req, res, next) => {
-  const book = await bookModel.getBook(req.params.id);
+  const book = await bookModel.getBook(parseInt(req.params.id));
   res.render("book_form", { title: "Update Book", book: book });
 });
 

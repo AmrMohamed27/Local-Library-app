@@ -58,6 +58,16 @@ const deleteAuthor = async function (authorId) {
     },
   });
 };
+const createAuthor = async function (authorData, dateOfBirth, dateOfDeath) {
+  return await prisma.author.create({
+    data: {
+      firstName: authorData.firstName,
+      familyName: authorData.familyName,
+      dateOfBirth: dateOfBirth,
+      dateOfDeath: dateOfDeath ? dateOfDeath : null,
+    },
+  });
+};
 
 module.exports = {
   getAllAuthors,
@@ -65,4 +75,5 @@ module.exports = {
   booksByAuthor,
   authorExists,
   deleteAuthor,
+  createAuthor,
 };

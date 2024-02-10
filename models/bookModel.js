@@ -30,23 +30,6 @@ const getAllBooks = async function () {
   });
 };
 
-const getBookAuthor = async function (bookId) {
-  const book = getBook(bookId);
-  return await prisma.author.findUnique({
-    where: {
-      id: book.authorId,
-    },
-  });
-};
-const getBookGenre = async function (bookId) {
-  const book = getBook(bookId);
-  return await prisma.genre.findUnique({
-    where: {
-      id: book.authorId,
-    },
-  });
-};
-
 const createBook = async function (bookData) {
   return await prisma.book.create({
     data: {
@@ -94,8 +77,6 @@ const deleteBook = async function (bookId) {
 };
 
 module.exports = {
-  getBookAuthor,
-  getBookGenre,
   getBook,
   getAllBooks,
   createBook,

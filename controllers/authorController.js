@@ -17,26 +17,20 @@ exports.author_list = asyncHandler(async (req, res, next) => {
 
 // Display detail page for a specific Author.
 exports.author_detail = asyncHandler(async (req, res, next) => {
-  try {
-    const author = await authorModel.getAuthor(parseInt(req.params.id));
-    if (author === null) {
-      const err = new Error("Author not found");
-      err.status = 404;
-      return next(err);
-    }
-    const booksByAuthor = await authorModel.booksByAuthor(author.id);
-    res.render("author_detail", {
-      title: "Author Detail",
-      author: author,
-      books: booksByAuthor,
-      calculateAge: calculateAge,
-      formatDate: formatDate,
-    });
-  } catch (err) {
+  const author = await authorModel.getAuthor(parseInt(req.params.id));
+  if (author === null) {
+    const err = new Error("Author not found");
+    err.status = 404;
     return next(err);
-  } finally {
-    prisma.$disconnect;
   }
+  const booksByAuthor = await authorModel.booksByAuthor(author.id);
+  res.render("author_detail", {
+    title: "Author Detail",
+    author: author,
+    books: booksByAuthor,
+    calculateAge: calculateAge,
+    formatDate: formatDate,
+  });
 });
 
 // Display Author create form on GET.
@@ -87,21 +81,18 @@ exports.author_create_post = [
         errors: errors.array(),
       });
     } else {
-      const authorExists = authorModel.authorExists(
+      const authorExists = await authorModel.authorExists(
         authorData.firstName,
         authorData.familyName
       );
       if (authorExists) {
         res.redirect(`/catalog/author/${authorExists.id}`);
       } else {
-        const createdAuthor = await prisma.author.create({
-          data: {
-            firstName: authorData.firstName,
-            familyName: authorData.familyName,
-            dateOfBirth: req.body.dateOfBirth,
-            dateOfDeath: req.body.dateOfDeath ? req.body.dateOfDeath : null,
-          },
-        });
+        const createdAuthor = await authorModel.createAuthor(
+          authorData,
+          req.body.dateOfBirth,
+          req.body.dateOfDeath
+        );
         res.redirect(`/catalog/author/${createdAuthor.id}`);
       }
     }
@@ -141,7 +132,7 @@ exports.author_delete_post = asyncHandler(async (req, res, next) => {
     });
     return;
   } else {
-    authorModel.deleteAuthor(author.id);
+    await authorModel.deleteAuthor(author.id);
     res.redirect("/catalog/authors");
   }
 });

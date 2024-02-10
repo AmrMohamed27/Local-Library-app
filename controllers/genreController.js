@@ -60,7 +60,7 @@ exports.genre_create_post = [
       if (genreExists) {
         res.redirect(`/catalog/genre/${genreExists.id}`);
       } else {
-        const createdGenre = genreModel.createGenre(genreName);
+        const createdGenre = await genreModel.createGenre(genreName);
         res.redirect(`/catalog/genre/${createdGenre.id}`);
       }
     }
@@ -69,7 +69,7 @@ exports.genre_create_post = [
 
 // Display Genre delete form on GET.
 exports.genre_delete_get = asyncHandler(async (req, res, next) => {
-  const genre = await genreModel.getGenre(req.params.id);
+  const genre = await genreModel.getGenre(parseInt(req.params.id));
   const booksInGenre = await genreModel.getBooksInGenre(genre.id);
   res.render("genre_delete", {
     title: "Delete Genre",
@@ -80,7 +80,7 @@ exports.genre_delete_get = asyncHandler(async (req, res, next) => {
 
 // Handle Genre delete on POST.
 exports.genre_delete_post = asyncHandler(async (req, res, next) => {
-  const genre = await genreModel.getGenre(req.body.genreId);
+  const genre = await genreModel.getGenre(parseInt(req.body.genreId));
   const booksInGenre = await genreModel.getBooksInGenre(genre.id);
   if (booksInGenre.length > 0) {
     res.render("genre_delete", {
@@ -89,7 +89,7 @@ exports.genre_delete_post = asyncHandler(async (req, res, next) => {
       genre: genre,
     });
   }
-  genreModel.deleteGenre(genre.id);
+  await genreModel.deleteGenre(genre.id);
   res.redirect("/catalog/genres");
 });
 

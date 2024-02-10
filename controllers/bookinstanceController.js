@@ -36,7 +36,7 @@ exports.bookinstance_detail = asyncHandler(async (req, res, next) => {
     err.status = 404;
     return next(err);
   }
-  const author = await bookModel.getBookAuthor(book.id);
+  const author = await authorModel.getAuthor(book.authorId);
   if (author === null) {
     const err = new Error("Author not found");
     err.status = 404;
@@ -106,7 +106,7 @@ exports.bookinstance_delete_get = asyncHandler(async (req, res, next) => {
     parseInt(req.params.id)
   );
   const book = await bookModel.getBook(bookInstance.bookId);
-  const author = await bookModel.getBookAuthor(book.id);
+  const author = await authorModel.getAuthor(book.authorId);
   if (!bookInstance || !book || !author) {
     res.redirect("/catalog/bookinstances");
   }
