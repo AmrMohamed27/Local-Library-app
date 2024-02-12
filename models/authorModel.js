@@ -69,6 +69,20 @@ const createAuthor = async function (authorData, dateOfBirth, dateOfDeath) {
   });
 };
 
+const updateAuthor = async function (authorData, dateOfBirth, dateOfDeath) {
+  return await prisma.author.update({
+    where: {
+      id: authorData.id,
+    },
+    data: {
+      firstName: authorData.firstName,
+      familyName: authorData.familyName,
+      dateOfBirth: dateOfBirth,
+      dateOfDeath: dateOfDeath ? dateOfDeath : null,
+    },
+  });
+};
+
 module.exports = {
   getAllAuthors,
   getAuthor,
@@ -76,4 +90,5 @@ module.exports = {
   authorExists,
   deleteAuthor,
   createAuthor,
+  updateAuthor,
 };

@@ -10,9 +10,9 @@ block content
             input#family-name.form-control(type="text" name="familyName" placeholder="eg. 'Snow'" required value=(author===undefined ? "" : author.familyName))
         .form-group
             label(for="dateOfBirth") Date of Birth:
-            input#dateOfBirth.form-control(type="date" name="dateOfBirth" required value=(author===undefined ? "" : author.dateOfBirth))
+            input#dateOfBirth.form-control(type="date" name="dateOfBirth" required value=(author===undefined ? "" : htmlDate(author.dateOfBirth)))
             label(for="dateOfDeath") Date of Death:
-            input#dateOfDeath.form-control(type="date" name="dateOfDeath" value=(author===undefined ? "" : author.dateOfDeath))
+            input#dateOfDeath.form-control(type="date" name="dateOfDeath" value=(author===undefined ? "" : htmlDate(author.dateOfDeath)))
             button.btn.btn-primary(type='submit') Submit
             button.btn.btn-secondary(type='reset') Reset
     if errors
