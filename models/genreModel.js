@@ -56,6 +56,15 @@ const deleteGenre = async function (genreId) {
     },
   });
 };
+
+const updateGenre = async function (genre) {
+  return await prisma.genre.update({
+    where: {
+      id: genre.id,
+    },
+    data: genre,
+  });
+};
 module.exports = {
   getAllGenres,
   getGenre,
@@ -63,4 +72,5 @@ module.exports = {
   genreExists,
   createGenre,
   deleteGenre,
+  updateGenre,
 };

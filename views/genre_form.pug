@@ -6,7 +6,7 @@ block content
     form(method="POST")
         .form-group
             label(for="name") Genre: 
-            input#name.form-control(type="text" name="name" placeholder="Fantasy, Poetic, etc." required value=(genre === undefined ? "" : genre))
+            input#name.form-control(type="text" name="name" placeholder="Fantasy, Poetic, etc." required value=(genre === undefined ? "" : genre.name))
             button.btn.btn-primary(type="submit") Submit
     if errors
         ul
