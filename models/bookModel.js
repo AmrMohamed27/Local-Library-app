@@ -1,13 +1,13 @@
-const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient();
+const { PrismaClient } = require("@prisma/client")
+const prisma = new PrismaClient()
 
 const getBook = async function (bookId) {
   return await prisma.book.findUnique({
     where: {
       id: bookId,
     },
-  });
-};
+  })
+}
 
 const getAllBooks = async function () {
   return await prisma.book.findMany({
@@ -27,8 +27,8 @@ const getAllBooks = async function () {
     orderBy: {
       title: "asc",
     },
-  });
-};
+  })
+}
 
 const createBook = async function (bookData) {
   return await prisma.book.create({
@@ -36,19 +36,19 @@ const createBook = async function (bookData) {
       title: bookData.title,
       author: {
         connect: {
-          id: parseInt(bookData.author),
+          id: bookData.authorId,
         },
       },
       summary: bookData.summary,
       isbn: bookData.isbn,
       genre: {
         connect: {
-          id: parseInt(bookData.genre),
+          id: bookData.genreId,
         },
       },
     },
-  });
-};
+  })
+}
 
 const bookExists = async function (isbn, title, summary) {
   return await prisma.book.findFirst({
@@ -57,24 +57,33 @@ const bookExists = async function (isbn, title, summary) {
       title: title,
       summary: summary,
     },
-  });
-};
+  })
+}
 
 const bookCopies = async function (bookId) {
   return await prisma.bookInstance.findMany({
     where: {
       bookId: bookId,
     },
-  });
-};
+  })
+}
 
 const deleteBook = async function (bookId) {
   return await prisma.book.delete({
     where: {
       id: bookId,
     },
-  });
-};
+  })
+}
+
+const updateBook = async function (bookData) {
+  return await prisma.book.update({
+    where: {
+      id: bookData.id,
+    },
+    data: bookData,
+  })
+}
 
 module.exports = {
   getBook,
@@ -83,4 +92,5 @@ module.exports = {
   bookExists,
   bookCopies,
   deleteBook,
-};
+  updateBook,
+}

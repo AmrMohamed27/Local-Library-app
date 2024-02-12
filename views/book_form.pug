@@ -13,7 +13,7 @@ block content
                 option(value="") --Please Select an Author--
                 each author in authors
                     if book
-                        if author.id===book.author
+                        if author.id===book.authorId
                             option(value=author.id selected )=`${author.firstName} ${author.familyName}`
                         else 
                             option(value=author.id)=`${author.firstName} ${author.familyName}`
@@ -23,15 +23,24 @@ block content
             label(for="summary") Summary:
             textarea#summary.form-control(placeholder="Book Summary" name="summary" required)=book===undefined ? "" : book.summary
         .form-group
-            label(for="isbn") ISBN:
+            label(for="isbn")= `ISBN: ${13 - (book && book.isbn ? book.isbn.length : 0)} digits left`
             input#isbn.form-control(type="text" name="isbn" placeholder="ISBN13" required value=(book===undefined ? "" : book.isbn))
+            script.
+                document.addEventListener('DOMContentLoaded', function() {
+                    const isbnInput = document.getElementById('isbn');
+                    const label = document.querySelector('label[for="isbn"]');
+                    isbnInput.addEventListener('input', function() {
+                        const remainingDigits = 13 - isbnInput.value.length;
+                        label.textContent = `ISBN: ${remainingDigits} digits left`;
+                    });
+                });
         .form-group
             label(for="genre") Genre:
             select#genre.form-control(name="genre" required)
                 option(value="") --Please Select a Genre--
                 each genre in genres
                     if book
-                        if genre.id===book.genre
+                        if genre.id===book.genreId
                             option(value=genre.id selected )=genre.name
                         else
                             option(value=genre.id)=genre.name
@@ -39,7 +48,7 @@ block content
                         option(value=genre.id)=genre.name
         button.btn.btn-primary(type='submit') Submit
         button.btn.btn-secondary(type="reset") Reset
-    if errors
-        ul
-            each error in errors
-                li!= error.msg
+        if errors
+            ul
+                each error in errors
+                    li!= error.msg

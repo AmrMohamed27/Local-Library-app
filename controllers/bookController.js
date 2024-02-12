@@ -5,7 +5,6 @@ const { DateTime } = require("luxon");
 const { body, validationResult } = require("express-validator");
 const { formatDate } = require("./functions.js");
 const bookModel = require("../models/bookModel.js");
-const bookInstanceModel = require("../models/bookInstancesModel.js");
 const authorModel = require("../models/authorModel.js");
 const genreModel = require("../models/genreModel.js");
 
@@ -104,17 +103,16 @@ exports.book_create_post = [
     .trim()
     .isLength({ min: 1 })
     .withMessage("Book summary must not be empty"),
-  body("isbn")
+  body("isbn", "Book ISBN must contain 13 digits")
     .trim()
     .isLength({ min: 13, max: 13 })
-    .isNumeric()
-    .withMessage("Book ISBN must contain 13 digits"),
+    .isNumeric(),
   asyncHandler(async (req, res, next) => {
     const errors = validationResult(req);
     const bookData = {
       title: req.body.title,
-      author: req.body.author,
-      genre: req.body.genre,
+      authorId: parseInt(req.body.author),
+      genreId: parseInt(req.body.genre),
       summary: req.body.summary,
       isbn: req.body.isbn,
     };
@@ -128,6 +126,7 @@ exports.book_create_post = [
         book: bookData,
         authors: allAuthors,
         genres: allGenres,
+        errors: errors.array(),
       });
     } else {
       const bookExists = await bookModel.bookExists(
@@ -190,10 +189,68 @@ exports.book_delete_post = asyncHandler(async (req, res, next) => {
 // Display book update form on GET.
 exports.book_update_get = asyncHandler(async (req, res, next) => {
   const book = await bookModel.getBook(parseInt(req.params.id));
-  res.render("book_form", { title: "Update Book", book: book });
+  const [allAuthors, allGenres] = await Promise.all([
+    authorModel.getAllAuthors(),
+    genreModel.getAllGenres(),
+  ]);
+  if (!book) {
+    const err = new Error("Book not found");
+    err.status = 404;
+    return next(err);
+  }
+  const author = await authorModel.getAuthor(book.authorId);
+  const genre = await genreModel.getGenre(book.genreId);
+  res.render("book_form", {
+    title: "Update Book",
+    book: book,
+    authors: allAuthors,
+    genres: allGenres,
+    bookAuthor: author,
+    bookGenre: genre,
+  });
 });
 
 // Handle book update on POST.
-exports.book_update_post = asyncHandler(async (req, res, next) => {
-  res.send("NOT IMPLEMENTED: Book update POST");
-});
+exports.book_update_post = [
+  body("title")
+    .trim()
+    .isLength({ min: 1 })
+    .escape()
+    .withMessage("Book title must not be empty"),
+  body("genre").escape(),
+  body("summary")
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage("Book summary must not be empty"),
+  body("isbn")
+    .trim()
+    .isLength({ min: 13, max: 13 })
+    .isNumeric()
+    .withMessage("Book ISBN must contain 13 digits"),
+  asyncHandler(async (req, res, next) => {
+    const errors = validationResult(req);
+    const bookData = {
+      title: req.body.title,
+      authorId: parseInt(req.body.author),
+      genreId: parseInt(req.body.genre),
+      summary: req.body.summary,
+      isbn: req.body.isbn,
+      id: parseInt(req.params.id),
+    };
+    if (!errors.isEmpty()) {
+      const [allAuthors, allGenres] = await Promise.all([
+        authorModel.getAllAuthors(),
+        genreModel.getAllGenres(),
+      ]);
+      res.render("book_form", {
+        title: "Edit Book",
+        book: bookData,
+        authors: allAuthors,
+        genres: allGenres,
+      });
+    } else {
+      const editedBook = await bookModel.updateBook(bookData);
+      res.redirect(`/catalog/book/${editedBook.id}`);
+    }
+  }),
+];
