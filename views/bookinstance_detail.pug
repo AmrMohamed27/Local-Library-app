@@ -17,4 +17,6 @@ block content
     if bookInstance.status!="AVAILABLE"
         p #[strong Due Back: ] #{formatDate(bookInstance.dueBack)}
     hr
-    p #[a(href="/catalog/bookinstance/" + bookInstance.id + "/delete" style="color: red;") Delete this book instance]
+    a(href="/catalog/bookinstance/" + bookInstance.id + "/delete" style="color: red;") Delete this book instance
+    hr
+    a(href="/catalog/bookinstance/" + bookInstance.id + "/update" style="color: green;") Update this book instance

@@ -2,7 +2,7 @@ extends layout
 
 block content
     h1=title
-    form(method="POST")
+    form(method="POST" id="form")
         .form-group
             label(for="book") Book:
             select#book.form-control(name="book" required)
@@ -17,7 +17,7 @@ block content
                         option(value=bookie.id)=bookie.title
         .form-group
             label(for="dueBack") Due Back:
-            input#dueBack.form-control(type="date" name="dueBack", value=data===undefined ? "" : data.dueBack, required)
+            input#dueBack.form-control(type="date" name="dueBack", value=data===undefined ? "" : data.dueBack)
         .form-group
             label(for="status") Status:
             select#status.form-control(name="status" required)
@@ -30,6 +30,16 @@ block content
                             option(value=stat)=stat
                     else 
                         option(value=stat)=stat
+            script.
+                const dueBackInput = document.getElementById('dueBack');
+                const statusSelect = document.getElementById('status');
+                statusSelect.addEventListener('change', function() {
+                    if (statusSelect.value === 'AVAILABLE') {
+                        dueBackInput.removeAttribute('required');
+                    } else {
+                        dueBackInput.setAttribute('required', true);
+                    }
+                });
         button.btn.btn-primary(type="submit") Submit
         button.btn.btn-secondary(type="reset") Reset 
     if errors 

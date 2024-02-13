@@ -29,7 +29,7 @@ const createBookInstance = async function (bookInstanceData, dueBack) {
     data: {
       status: bookInstanceData.status,
       bookId: bookInstanceData.book,
-      dueBack: dueBack,
+      dueBack: dueBack ? dueBack : null,
     },
   });
 };
@@ -41,10 +41,25 @@ const deleteBookInstance = async function (Id) {
     },
   });
 };
+
+const updateBookInstance = async function (data, dueBack) {
+  console.log(data);
+  return await prisma.bookInstance.update({
+    where: {
+      id: data.id,
+    },
+    data: {
+      status: data.status,
+      bookId: data.bookId,
+      dueBack: dueBack ? dueBack : null,
+    },
+  });
+};
 module.exports = {
   getBookInstance,
   getAllBookInstances,
   statusList,
   createBookInstance,
   deleteBookInstance,
+  updateBookInstance,
 };

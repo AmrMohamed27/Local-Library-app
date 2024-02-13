@@ -133,10 +133,63 @@ exports.bookinstance_delete_post = asyncHandler(async (req, res, next) => {
 
 // Display BookInstance update form on GET.
 exports.bookinstance_update_get = asyncHandler(async (req, res, next) => {
-  res.send("NOT IMPLEMENTED: BookInstance update GET");
+  const bookInstance = await bookInstanceModel.getBookInstance(
+    parseInt(req.params.id)
+  );
+  const book = await bookModel.getBook(bookInstance.bookId);
+  const data = {
+    book: book.id,
+    status: bookInstance.status,
+    dueBack: htmlDate(bookInstance.dueBack),
+  };
+  res.render("bookinstance_form", {
+    title: "Update Book Instance",
+    bookList: await bookModel.getAllBooks(),
+    statusList: await bookInstanceModel.statusList(),
+    data: data,
+  });
 });
 
 // Handle bookinstance update on POST.
-exports.bookinstance_update_post = asyncHandler(async (req, res, next) => {
-  res.send("NOT IMPLEMENTED: BookInstance update POST");
-});
+exports.bookinstance_update_post = [
+  body("book")
+    .trim()
+    .isLength({ min: 1 })
+    .escape()
+    .withMessage("Book is required"),
+  body("status").escape(),
+  body("dueBack")
+    .optional({ values: "falsy" })
+    .isISO8601()
+    .toDate()
+    .withMessage("Invalid Date"),
+  asyncHandler(async (req, res, next) => {
+    const errors = validationResult(req);
+    const bookInstance = await bookInstanceModel.getBookInstance(
+      parseInt(req.params.id)
+    );
+    const bookInstanceData = {
+      bookId: parseInt(req.body.book),
+      status: req.body.status,
+      dueBack: htmlDate(req.body.dueBack),
+      id: bookInstance.id,
+    };
+
+    if (!errors.isEmpty()) {
+      res.render("bookinstance_form", {
+        title: "Update Book Instance",
+        bookList: await bookModel.getAllBooks(),
+        data: bookInstanceData,
+        errors: errors.array(),
+        statusList: await bookInstanceModel.statusList(),
+      });
+      return;
+    } else {
+      const updatedBookInstance = await bookInstanceModel.updateBookInstance(
+        bookInstanceData,
+        req.body.dueBack
+      );
+      res.redirect(`/catalog/bookinstance/${updatedBookInstance.id}`);
+    }
+  }),
+];
