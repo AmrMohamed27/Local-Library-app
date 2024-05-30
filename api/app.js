@@ -4,33 +4,14 @@ const path = require("path");
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
 
-const indexRouter = require("./routes/index");
-const usersRouter = require("./routes/users");
-const catalogRouter = require("./routes/catalog"); //Import routes for "catalog" area of site
+const indexRouter = require("../routes/index");
+const usersRouter = require("../routes/users");
+const catalogRouter = require("../routes/catalog"); //Import routes for "catalog" area of site
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 const app = express();
 
 require("dotenv").config();
-
-// Function to add authors
-
-// async function createAuthor(fname, lname, birthday) {
-//   try {
-//     const newAuthor = await prisma.author.create({
-//       data: {
-//         firstName: fname,
-//         familyName: lname,
-//         dateOfBirth: new Date(birthday),
-//       },
-//     });
-//     console.log("Created author:", newAuthor);
-//   } catch (error) {
-//     console.error("Error creating author:", error);
-//   } finally {
-//     await prisma.$disconnect();
-//   }
-// }
 
 // view engine setup
 app.set("views", path.join(__dirname, "views"));
