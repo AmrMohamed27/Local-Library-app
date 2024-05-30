@@ -8,7 +8,6 @@
   "scripts": {
     "start": "node ./bin/www",
     "devStart": "nodemon ./bin/www",
-    "build": "prisma generate && node ./bin/www",
     "serverStart": "SET DEBUG=local-library:* & npm run devStart"
   },
   "dependencies": {
